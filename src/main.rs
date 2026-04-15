@@ -1,16 +1,17 @@
 use axum::{
-    Json, Router, extract::State, response::IntoResponse, routing::{delete, get, post, put}
+    Json, Router,
+    extract::State,
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{delete, get, post, put},
 };
-use serde::Serialize;
-use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
+use serde::{Deserialize, Serialize};
+use sqlx::{Pool, Postgres, postgres::PgPoolOptions, prelude::FromRow, query_as};
 
 #[tokio::main]
 async fn main() {
     let database_url = "postgres://postgres:postgres@localhost:5432/db";
-    let db = PgPoolOptions::new()
-        .connect(database_url)
-        .await
-        .unwrap();
+    let db = PgPoolOptions::new().connect(database_url).await.unwrap();
 
     sqlx::migrate!().run(&db).await.unwrap();
 
@@ -26,7 +27,7 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, FromRow)]
 struct Student {
     id: i32,
     name: String,
@@ -35,37 +36,23 @@ struct Student {
     grade: Option<String>, // Should be Option<char>
 }
 
-async fn read_students() -> Json<Vec<Student>> {
-    Json(vec![
-        Student {
-            id: 1,
-            name: "John".to_string(),
-            course: "DATA2410".to_string(),
-            marks: 23,
-            grade: None,
-        },
-        Student {
-            id: 2,
-            name: "Lisa".to_string(),
-            course: "DATA2300".to_string(),
-            marks: 21,
-            grade: Some("D".to_string()),
-        },
-        Student {
-            id: 3,
-            name: "Igor".to_string(),
-            course: "Mathematics 1".to_string(),
-            marks: 90,
-            grade: None,
-        },
-        Student {
-            id: 4,
-            name: "Chris".to_string(),
-            course: "DAPE2101".to_string(),
-            marks: 10,
-            grade: Some("A".to_string()),
-        },
-    ])
+#[derive(Deserialize)]
+struct NewStudent {
+    name: String,
+    course: String,
+    marks: i32,            // Should be custom marks type
+    grade: Option<String>, // Should be Option<char>
+}
+
+async fn read_students(
+    State(pool): State<Pool<Postgres>>,
+) -> Result<Json<Vec<Student>>, (StatusCode, String)> {
+    let students = query_as::<_, Student>("SELECT * FROM students")
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(students))
 }
 
 async fn read_student_by_id() -> Json<Student> {
@@ -78,9 +65,20 @@ async fn read_student_by_id() -> Json<Student> {
     })
 }
 
-async fn create_student(State(pool): State<Pool<Postgres>>) -> impl IntoResponse {
-    todo!("Implement");
-    "Student created"
+async fn create_student(
+    State(pool): State<Pool<Postgres>>,
+    Json(new_student): Json<NewStudent>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    sqlx::query("INSERT INTO students(name, course, marks, grade) VALUES ($1, $2, $3, $4)")
+        .bind(&new_student.name)
+        .bind(&new_student.course)
+        .bind(new_student.marks)
+        .bind(&new_student.grade)
+        .execute(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(StatusCode::CREATED)
 }
 
 async fn update_student() -> impl IntoResponse {
