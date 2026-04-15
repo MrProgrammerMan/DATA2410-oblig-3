@@ -1,4 +1,9 @@
-use axum::{Router, response::IntoResponse, routing::{delete, get, post, put}};
+use axum::{
+    Json, Router,
+    response::IntoResponse,
+    routing::{delete, get, post, put},
+};
+use serde::Serialize;
 
 #[tokio::main]
 async fn main() {
@@ -13,22 +18,56 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
+#[derive(Serialize)]
 struct Student {
     id: i32,
     name: String,
     course: String,
-    marks: i32, // Should be custom marks type
-    grade: Option<String> // Should be Option<char>
+    marks: i32,            // Should be custom marks type
+    grade: Option<String>, // Should be Option<char>
 }
 
-async fn read_students() -> impl IntoResponse {
-    todo!("Implement");
-    "The students"
+async fn read_students() -> Json<Vec<Student>> {
+    Json(vec![
+        Student {
+            id: 1,
+            name: "John".to_string(),
+            course: "DATA2410".to_string(),
+            marks: 23,
+            grade: None,
+        },
+        Student {
+            id: 2,
+            name: "Lisa".to_string(),
+            course: "DATA2300".to_string(),
+            marks: 21,
+            grade: Some("D".to_string()),
+        },
+        Student {
+            id: 3,
+            name: "Igor".to_string(),
+            course: "Mathematics 1".to_string(),
+            marks: 90,
+            grade: None,
+        },
+        Student {
+            id: 4,
+            name: "Chris".to_string(),
+            course: "DAPE2101".to_string(),
+            marks: 10,
+            grade: Some("A".to_string()),
+        },
+    ])
 }
 
-async fn read_student_by_id() -> impl IntoResponse {
-    todo!("Implement");
-    "The student by id"
+async fn read_student_by_id() -> Json<Student> {
+    Json(Student {
+        id: 2,
+        name: "Lisa".to_string(),
+        course: "DATA2300".to_string(),
+        marks: 21,
+        grade: Some("D".to_string()),
+    })
 }
 
 async fn create_student() -> impl IntoResponse {
