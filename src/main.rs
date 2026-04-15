@@ -59,9 +59,13 @@ async fn read_student_by_id(
 ) -> Result<Json<Student>, (StatusCode, String)> {
     let student = query_as::<_, Student>("SELECT * FROM students WHERE id = $1")
         .bind(user_id)
-        .fetch_one(&pool)
+        .fetch_optional(&pool)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            format!("No student with id {user_id}"),
+        ))?;
 
     Ok(Json(student))
 }
