@@ -19,8 +19,8 @@ async fn main() {
         .route("/api/Students", get(read_students))
         .route("/api/Students/{id}", get(read_student_by_id))
         .route("/api/Students", post(create_student))
-        .route("/api/Students", put(update_student))
-        .route("/api/Students", delete(delete_student))
+        .route("/api/Students/{id}", put(update_student))
+        .route("/api/Students/{id}", delete(delete_student_by_id))
         .with_state(db);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -89,7 +89,19 @@ async fn update_student() -> impl IntoResponse {
     "Student updated"
 }
 
-async fn delete_student() -> impl IntoResponse {
-    todo!("Implement");
-    "The students"
+async fn delete_student_by_id(
+    State(pool): State<Pool<Postgres>>,
+    Path(user_id): Path<i32>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    let result = sqlx::query("DELETE FROM students WHERE id = $1")
+        .bind(user_id)
+        .execute(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if result.rows_affected() == 0 {
+        return Err((StatusCode::NOT_FOUND, format!("No student with id {user_id}")));
+    }
+
+    Ok(StatusCode::NO_CONTENT)
 }
