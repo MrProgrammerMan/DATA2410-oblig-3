@@ -1,0 +1,53 @@
+POST /api/Students HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+
+{
+    "name":"John",
+    "course":"DATA2410",
+    "marks":23,
+    "grade":"A"
+}
+
+POST /api/Students HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+
+{
+    "name":"Alice",
+    "course":"PROG2053",
+    "marks":87,
+    "grade":"B"
+}
+
+POST /api/Students HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+
+{
+    "name":"Bob",
+    "course":"DATA2410",
+    "marks":45,
+    "grade":null
+}
+
+POST /api/Students HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+
+{
+    "name":"Eve",
+    "course":"MATH1001",
+    "marks":92
+}
+
+POST /api/Students HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+
+{
+    "name":"Charlie",
+    "course":"DCSG1005",
+    "marks":68,
+    "grade":"C"
+}
