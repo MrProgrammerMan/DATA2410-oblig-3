@@ -50,3 +50,13 @@ Content-Type: application/json
 
 DELETE /api/Students/2 HTTP/1.1
 Host: localhost:3000
+
+PUT /api/Students/1 HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+
+{
+    "name":"John Smith",
+    "course":"DATA2410",
+    "marks":78
+}
