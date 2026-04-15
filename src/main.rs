@@ -1,18 +1,26 @@
 use axum::{
-    Json, Router,
-    response::IntoResponse,
-    routing::{delete, get, post, put},
+    Json, Router, extract::State, response::IntoResponse, routing::{delete, get, post, put}
 };
 use serde::Serialize;
+use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 
 #[tokio::main]
 async fn main() {
+    let database_url = "postgres://postgres:postgres@localhost:5432/db";
+    let db = PgPoolOptions::new()
+        .connect(database_url)
+        .await
+        .unwrap();
+
+    sqlx::migrate!().run(&db).await.unwrap();
+
     let app = Router::new()
         .route("/api/Students", get(read_students))
         .route("/api/Students/{id}", get(read_student_by_id))
         .route("/api/Students", post(create_student))
         .route("/api/Students", put(update_student))
-        .route("/api/Students", delete(delete_student));
+        .route("/api/Students", delete(delete_student))
+        .with_state(db);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
@@ -70,7 +78,7 @@ async fn read_student_by_id() -> Json<Student> {
     })
 }
 
-async fn create_student() -> impl IntoResponse {
+async fn create_student(State(pool): State<Pool<Postgres>>) -> impl IntoResponse {
     todo!("Implement");
     "Student created"
 }
