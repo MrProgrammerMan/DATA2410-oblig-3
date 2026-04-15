@@ -7,4 +7,5 @@ edition = "2024"
 axum = "0.8.9"
 serde = { version = "1.0.228", features = ["serde_derive"] }
 serde_json = "1.0.149"
+sqlx = { version = "0.8.6", features = ["postgres", "macros", "migrate"] }
 tokio = { version = "1.52.0", features = ["full"] }
