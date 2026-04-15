@@ -5,8 +5,7 @@ Content-Type: application/json
 {
     "name":"John",
     "course":"DATA2410",
-    "marks":23,
-    "grade":"A"
+    "marks":23
 }
 
 POST /api/Students HTTP/1.1
@@ -16,8 +15,7 @@ Content-Type: application/json
 {
     "name":"Alice",
     "course":"PROG2053",
-    "marks":87,
-    "grade":"B"
+    "marks":87
 }
 
 POST /api/Students HTTP/1.1
@@ -27,8 +25,7 @@ Content-Type: application/json
 {
     "name":"Bob",
     "course":"DATA2410",
-    "marks":45,
-    "grade":null
+    "marks":45
 }
 
 POST /api/Students HTTP/1.1
@@ -48,8 +45,7 @@ Content-Type: application/json
 {
     "name":"Charlie",
     "course":"DCSG1005",
-    "marks":68,
-    "grade":"C"
+    "marks":68
 }
 
 DELETE /api/Students/2 HTTP/1.1

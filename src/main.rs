@@ -41,7 +41,6 @@ struct NewStudent {
     name: String,
     course: String,
     marks: i32,            // Should be custom Marks type
-    grade: Option<String>, // Should be Option<Grade>
 }
 
 async fn read_students(
@@ -72,11 +71,10 @@ async fn create_student(
     State(pool): State<Pool<Postgres>>,
     Json(new_student): Json<NewStudent>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    sqlx::query("INSERT INTO students(name, course, marks, grade) VALUES ($1, $2, $3, $4)")
+    sqlx::query("INSERT INTO students(name, course, marks) VALUES ($1, $2, $3)")
         .bind(&new_student.name)
         .bind(&new_student.course)
         .bind(new_student.marks)
-        .bind(&new_student.grade)
         .execute(&pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
