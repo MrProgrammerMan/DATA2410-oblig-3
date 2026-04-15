@@ -1,0 +1,7 @@
+CREATE TABLE students (
+    id INTEGER PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    course VARCHAR(255) NOT NULL,
+    marks INTEGER NOT NULL,
+    grade VARCHAR(1)
+);
