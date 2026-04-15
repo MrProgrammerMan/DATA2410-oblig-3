@@ -2,7 +2,6 @@ use axum::{
     Json, Router,
     extract::{Path, State},
     http::StatusCode,
-    response::IntoResponse,
     routing::{delete, get, post, put},
 };
 use serde::{Deserialize, Serialize};
@@ -40,7 +39,7 @@ struct Student {
 struct NewStudent {
     name: String,
     course: String,
-    marks: i32,            // Should be custom Marks type
+    marks: i32, // Should be custom Marks type
 }
 
 async fn read_students(
@@ -87,19 +86,21 @@ async fn update_student(
     Path(user_id): Path<i32>,
     Json(new_student): Json<NewStudent>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let result = sqlx::query(
-        "UPDATE students SET name = $1, course = $2, marks = $3 WHERE id = $4"
-    )
-        .bind(&new_student.name)
-        .bind(&new_student.course)
-        .bind(new_student.marks)
-        .bind(user_id)
-        .execute(&pool)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let result =
+        sqlx::query("UPDATE students SET name = $1, course = $2, marks = $3 WHERE id = $4")
+            .bind(&new_student.name)
+            .bind(&new_student.course)
+            .bind(new_student.marks)
+            .bind(user_id)
+            .execute(&pool)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if result.rows_affected() == 0 {
-        return Err((StatusCode::NOT_FOUND, format!("No student with id {user_id}")));
+        return Err((
+            StatusCode::NOT_FOUND,
+            format!("No student with id {user_id}"),
+        ));
     }
 
     Ok(StatusCode::NO_CONTENT)
@@ -116,7 +117,10 @@ async fn delete_student_by_id(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if result.rows_affected() == 0 {
-        return Err((StatusCode::NOT_FOUND, format!("No student with id {user_id}")));
+        return Err((
+            StatusCode::NOT_FOUND,
+            format!("No student with id {user_id}"),
+        ));
     }
 
     Ok(StatusCode::NO_CONTENT)
