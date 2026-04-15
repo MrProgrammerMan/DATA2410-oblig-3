@@ -1,6 +1,6 @@
 use axum::{
     Json, Router,
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, post, put},
@@ -32,16 +32,16 @@ struct Student {
     id: i32,
     name: String,
     course: String,
-    marks: i32,            // Should be custom marks type
-    grade: Option<String>, // Should be Option<char>
+    marks: i32,            // Should be custom Marks type
+    grade: Option<String>, // Should be Option<Grade>
 }
 
 #[derive(Deserialize)]
 struct NewStudent {
     name: String,
     course: String,
-    marks: i32,            // Should be custom marks type
-    grade: Option<String>, // Should be Option<char>
+    marks: i32,            // Should be custom Marks type
+    grade: Option<String>, // Should be Option<Grade>
 }
 
 async fn read_students(
@@ -55,14 +55,17 @@ async fn read_students(
     Ok(Json(students))
 }
 
-async fn read_student_by_id() -> Json<Student> {
-    Json(Student {
-        id: 2,
-        name: "Lisa".to_string(),
-        course: "DATA2300".to_string(),
-        marks: 21,
-        grade: Some("D".to_string()),
-    })
+async fn read_student_by_id(
+    State(pool): State<Pool<Postgres>>,
+    Path(user_id): Path<i32>,
+) -> Result<Json<Student>, (StatusCode, String)> {
+    let student = query_as::<_, Student>("SELECT * FROM students WHERE id = $1")
+        .bind(user_id)
+        .fetch_one(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(student))
 }
 
 async fn create_student(
