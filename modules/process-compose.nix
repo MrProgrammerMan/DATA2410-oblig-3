@@ -13,9 +13,18 @@
             dir = ../migrations;
           in {
             enable = true;
-            initialScript.before = ''
-              CREATE USER postgres WITH password 'postgres';
-            '';
+            initialScript = {
+              before = ''
+                CREATE USER postgres WITH password 'postgres';
+              '';
+              after = ''
+                GRANT ALL PRIVILEGES ON DATABASE db TO postgres;
+                \c db
+                GRANT ALL ON SCHEMA public TO postgres;
+                GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres;
+                GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres;
+              '';
+            };
             initialDatabases = [
               {
                 name = "db";
