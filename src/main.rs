@@ -21,6 +21,7 @@ async fn main() {
         .route("/api/Students", post(create_student))
         .route("/api/Students/{id}", put(update_student))
         .route("/api/Students/{id}", delete(delete_student_by_id))
+        .route("/api/Students/calculate-grades", post(calculate_grades_handler))
         .with_state(db);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -129,4 +130,44 @@ async fn delete_student_by_id(
     }
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+async fn calculate_grades_handler(
+    State(pool): State<Pool<Postgres>>,
+) -> Result<Json<Vec<Student>>, (StatusCode, String)> {
+    let students = query_as::<_, Student>("SELECT * FROM students")
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    for student in students {
+        let grade = calculate_grade(student.marks);
+        sqlx::query("UPDATE students SET grade = $1 WHERE id = $2")
+            .bind(grade)
+            .bind(student.id)
+            .execute(&pool)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    }
+
+    let students = query_as::<_, Student>("SELECT * FROM students")
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(students))
+}
+
+fn calculate_grade(marks: i32) -> String {
+    if marks < 60 {
+        "F".to_string()
+    } else if marks < 70 {
+        "E".to_string()
+    } else if marks < 80 {
+        "C".to_string()
+    } else if marks < 90 {
+        "B".to_string()
+    } else {
+        "A".to_string()
+    }
 }
