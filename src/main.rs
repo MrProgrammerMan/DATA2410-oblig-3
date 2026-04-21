@@ -9,8 +9,9 @@ use sqlx::{Pool, Postgres, postgres::PgPoolOptions, prelude::FromRow, query_as};
 
 #[tokio::main]
 async fn main() {
-    let database_url = "postgres://postgres:postgres@localhost:5432/db";
-    let db = PgPoolOptions::new().connect(database_url).await.unwrap();
+    dotenvy::dotenv().unwrap();
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let db = PgPoolOptions::new().connect(&database_url).await.unwrap();
 
     sqlx::migrate!().run(&db).await.unwrap();
 
