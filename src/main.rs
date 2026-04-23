@@ -22,6 +22,7 @@ async fn main() {
         .route("/api/Students/{id}", put(update_student))
         .route("/api/Students/{id}", delete(delete_student_by_id))
         .route("/api/Students/calculate-grades", post(calculate_grades_handler))
+        .route("/api/Students/report", get(generate_report))
         .with_state(db);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -42,6 +43,41 @@ struct NewStudent {
     name: String,
     course: String,
     marks: i32, // Should be custom Marks type
+}
+
+#[derive(Serialize, FromRow)]
+struct Report {
+    course: String,
+    average_marks: f64,
+    min_marks: i32,
+    max_marks: i32,
+    grade_a_count: i64,
+    grade_b_count: i64,
+    grade_c_count: i64,
+    grade_d_count: i64,
+}
+
+async fn generate_report(
+    State(pool): State<Pool<Postgres>>,
+) -> Result<Json<Vec<Report>>, (StatusCode, String)> {
+    let res = query_as::<_, Report>(r#"SELECT
+            course,
+            COUNT(*) AS total_students,
+            ROUND(AVG(marks), 2)::FLOAT8 AS average_marks,
+            MIN(marks) AS min_marks,
+            MAX(marks) AS max_marks,
+            COUNT(*) FILTER (WHERE grade = 'A') AS grade_a_count,
+            COUNT(*) FILTER (WHERE grade = 'B') AS grade_b_count,
+            COUNT(*) FILTER (WHERE grade = 'C') AS grade_c_count,
+            COUNT(*) FILTER (WHERE grade = 'D') AS grade_d_count
+        FROM students
+        GROUP BY course
+        ORDER BY average_marks DESC;"#)
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
+    Ok(Json(res))
 }
 
 async fn read_students(
@@ -160,10 +196,8 @@ async fn calculate_grades_handler(
 
 fn calculate_grade(marks: i32) -> String {
     if marks < 60 {
-        "F".to_string()
-    } else if marks < 70 {
-        "E".to_string()
-    } else if marks < 80 {
+        "D".to_string()
+    } else if marks < 75 {
         "C".to_string()
     } else if marks < 90 {
         "B".to_string()
