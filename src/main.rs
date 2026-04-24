@@ -45,39 +45,78 @@ struct NewStudent {
     marks: i32, // Should be custom Marks type
 }
 
-#[derive(Serialize, FromRow)]
+#[derive(Serialize)]
+struct GradeDistribution {
+    #[serde(rename = "A")]
+    a: i64,
+    #[serde(rename = "B")]
+    b: i64,
+    #[serde(rename = "C")]
+    c: i64,
+    #[serde(rename = "D")]
+    d: i64,
+}
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct Report {
-    course: String,
+    course_name: String,
+    total_students: i64,
     average_marks: f64,
-    min_marks: i32,
-    max_marks: i32,
+    grade_distribution: GradeDistribution,
+}
+
+// Intern row-type fra databasen (FromRow, ikke direkte serialisert)
+#[derive(FromRow)]
+struct ReportRow {
+    course: String,
+    total_students: i64,
+    average_marks: f64,
     grade_a_count: i64,
     grade_b_count: i64,
     grade_c_count: i64,
     grade_d_count: i64,
 }
 
-async fn generate_report(
+async fn report_handler(
     State(pool): State<Pool<Postgres>>,
 ) -> Result<Json<Vec<Report>>, (StatusCode, String)> {
-    let res = query_as::<_, Report>(r#"SELECT
+    let rows = query_as::<_, ReportRow>(
+        r#"
+        SELECT
             course,
-            COUNT(*) AS total_students,
-            ROUND(AVG(marks), 2)::FLOAT8 AS average_marks,
-            MIN(marks) AS min_marks,
-            MAX(marks) AS max_marks,
-            COUNT(*) FILTER (WHERE grade = 'A') AS grade_a_count,
-            COUNT(*) FILTER (WHERE grade = 'B') AS grade_b_count,
-            COUNT(*) FILTER (WHERE grade = 'C') AS grade_c_count,
-            COUNT(*) FILTER (WHERE grade = 'D') AS grade_d_count
+            COUNT(*)                                        AS total_students,
+            ROUND(AVG(marks), 2)::FLOAT8                   AS average_marks,
+            COUNT(*) FILTER (WHERE grade = 'A')            AS grade_a_count,
+            COUNT(*) FILTER (WHERE grade = 'B')            AS grade_b_count,
+            COUNT(*) FILTER (WHERE grade = 'C')            AS grade_c_count,
+            COUNT(*) FILTER (WHERE grade = 'D')            AS grade_d_count
         FROM students
         GROUP BY course
-        ORDER BY average_marks DESC;"#)
-        .fetch_all(&pool)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
-    Ok(Json(res))
+        ORDER BY average_marks DESC
+        "#,
+    )
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let report = rows
+        .into_iter()
+        .map(|r| Report {
+            course_name: r.course,
+            total_students: r.total_students,
+            average_marks: r.average_marks,
+            grade_distribution: GradeDistribution {
+                a: r.grade_a_count,
+                b: r.grade_b_count,
+                c: r.grade_c_count,
+                d: r.grade_d_count,
+            },
+        })
+        .collect();
+
+    Ok(Json(report))
 }
 
 async fn read_students(
