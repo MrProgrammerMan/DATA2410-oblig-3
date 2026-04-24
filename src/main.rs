@@ -22,7 +22,7 @@ async fn main() {
         .route("/api/Students/{id}", put(update_student))
         .route("/api/Students/{id}", delete(delete_student_by_id))
         .route("/api/Students/calculate-grades", post(calculate_grades_handler))
-        .route("/api/Students/report", get(generate_report))
+        .route("/api/Students/report", get(report_handler))
         .with_state(db);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -55,7 +55,6 @@ struct GradeDistribution {
     c: i64,
     #[serde(rename = "D")]
     d: i64,
-}
 }
 
 #[derive(Serialize)]
