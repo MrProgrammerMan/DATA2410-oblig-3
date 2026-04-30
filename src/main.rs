@@ -182,6 +182,7 @@ fn calculate_grade(marks: i32) -> String {
     }
 }
 
+/// Holds the count of each grade (A, B, C, D) for a course
 #[derive(Serialize)]
 struct GradeDistribution {
     #[serde(rename = "A")]
@@ -215,6 +216,12 @@ struct ReportRow {
     grade_d_count: i64,
 }
 
+/// # Task 2 (endpoint 7): Implemnet the "report" Endpoint
+/// Generates a course-wise report of results grouped by course.
+///
+/// Queries all students grouped by course, then for each course:
+/// 1. Calculates total students and average marks
+/// 2. Counts grade distribution (A, B, C, D)
 async fn report_handler(
     State(pool): State<Pool<Postgres>>,
 ) -> Result<Json<Vec<Report>>, (StatusCode, String)> {
