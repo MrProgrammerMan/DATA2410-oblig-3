@@ -29,47 +29,13 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-#[derive(FromRow, Serialize)]
-struct StudentSQL {
-    id: i32,
-    name: String,
-    course: String,
-    marks: i32,
-    grade: Option<String>,
-}
-
-#[derive(Serialize)]
+#[derive(Serialize, FromRow)]
 struct Student {
     id: i32,
     name: String,
     course: String,
-    marks: Marks,
-    grade: Option<Grade>,
-}
-
-#[derive(Serialize)]
-struct Marks {
-    inner: i32,
-}
-
-impl Marks {
-    pub fn new(n: i32) -> Result<Marks, String> {
-        if n < 0 || n > 100 {
-            Err("Marks have to be between 0 and 100".to_string())
-        } else {
-            Ok(Marks {
-                inner: n
-            })
-        }
-    }
-}
-
-#[derive(Serialize)]
-enum Grade {
-    A,
-    B,
-    C,
-    D,
+    marks: i32,            // Should be custom Marks type
+    grade: Option<String>, // Should be Option<Grade>
 }
 
 #[derive(Deserialize)]
@@ -154,8 +120,8 @@ async fn report_handler(
 
 async fn read_students(
     State(pool): State<Pool<Postgres>>,
-) -> Result<Json<Vec<StudentSQL>>, (StatusCode, String)> {
-    let students = query_as::<_, StudentSQL>("SELECT * FROM students")
+) -> Result<Json<Vec<Student>>, (StatusCode, String)> {
+    let students = query_as::<_, Student>("SELECT * FROM students")
         .fetch_all(&pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -166,8 +132,8 @@ async fn read_students(
 async fn read_student_by_id(
     State(pool): State<Pool<Postgres>>,
     Path(user_id): Path<i32>,
-) -> Result<Json<StudentSQL>, (StatusCode, String)> {
-    let student = query_as::<_, StudentSQL>("SELECT * FROM students WHERE id = $1")
+) -> Result<Json<Student>, (StatusCode, String)> {
+    let student = query_as::<_, Student>("SELECT * FROM students WHERE id = $1")
         .bind(user_id)
         .fetch_optional(&pool)
         .await
@@ -242,8 +208,8 @@ async fn delete_student_by_id(
 
 async fn calculate_grades_handler(
     State(pool): State<Pool<Postgres>>,
-) -> Result<Json<Vec<StudentSQL>>, (StatusCode, String)> {
-    let students = query_as::<_, StudentSQL>("SELECT * FROM students")
+) -> Result<Json<Vec<Student>>, (StatusCode, String)> {
+    let students = query_as::<_, Student>("SELECT * FROM students")
         .fetch_all(&pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -258,7 +224,7 @@ async fn calculate_grades_handler(
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     }
 
-    let students = query_as::<_, StudentSQL>("SELECT * FROM students")
+    let students = query_as::<_, Student>("SELECT * FROM students")
         .fetch_all(&pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
