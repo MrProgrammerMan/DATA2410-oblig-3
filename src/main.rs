@@ -136,6 +136,12 @@ async fn delete_student_by_id(
     Ok(StatusCode::NO_CONTENT)
 }
 
+/// # Task 1(endpoint 6): Calculate grades
+/// Calculates the grades of all students in the database and sets that grade.
+/// 
+/// Fetches all students, then for each student:
+/// 1. Calculates the grade
+/// 2. Sets that grade with an update query
 async fn calculate_grades_handler(
     State(pool): State<Pool<Postgres>>,
 ) -> Result<Json<Vec<Student>>, (StatusCode, String)> {
@@ -162,6 +168,8 @@ async fn calculate_grades_handler(
     Ok(Json(students))
 }
 
+/// # Calculate grades(helper)
+/// Maps marks to grades "A", "B", "C" or "D"
 fn calculate_grade(marks: i32) -> String {
     if marks < 60 {
         "D".to_string()
