@@ -1,3 +1,6 @@
+GET /api/Students HTTP/1.1
+Host: localhost:3000
+
 POST /api/Students HTTP/1.1
 Host: localhost:3000
 Content-Type: application/json
@@ -65,4 +68,5 @@ POST /api/Students/calculate-grades HTTP/1.1
 Host: localhost:3000
 
 ### Hent kursvis rapport
-GET http://localhost:3000/api/Students/report
+GET /api/Students/report HTTP/1.1
+Host: localhost:3000
